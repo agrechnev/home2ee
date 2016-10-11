@@ -53,10 +53,6 @@ public enum DBTester {
     // Constructor: runs once for a single instance
     DBTester() {
         System.out.println("Reading DBTester configuration ...");
-        System.out.println("DB_DRIVER="+DB_DRIVER);
-        System.out.println("DB_URL="+DB_URL);
-        System.out.println("DB_USER="+DB_USER);
-        System.out.println("DB_PASSWORD="+DB_PASSWORD);
 
         // Read the configuration file scripts/dbtester.config
         Properties config = new Properties();
@@ -74,6 +70,11 @@ public enum DBTester {
             e.printStackTrace();
             System.exit(1);
         }
+
+        System.out.println("DB_DRIVER="+DB_DRIVER);
+        System.out.println("DB_URL="+DB_URL);
+        System.out.println("DB_USER="+DB_USER);
+        System.out.println("DB_PASSWORD="+DB_PASSWORD);
 
         // Check for Windows vs Unix
         String os = System.getProperty("os.name").toLowerCase();
@@ -114,7 +115,7 @@ public enum DBTester {
         // I do it to ensure a clean test
 
         // First, run the init script: different for Win and Unix
-        try {
+        /*try {
 
             String command = (runsOnWindows ? "scripts\\init.bat " : "scripts/init.sh ") +
                     DB_USER + " " + DB_PASSWORD;
@@ -124,7 +125,7 @@ public enum DBTester {
             e.printStackTrace();
             // Exception means failed test
             Assert.fail();
-        }
+        }*/
 
         // Load the DB driver
         // Not needed nowadays, but wouldn't hurt
@@ -148,6 +149,40 @@ public enum DBTester {
             // SQL exception means failed test
             Assert.fail();
         }
+    }
+
+    /**
+     * Test whether the result of the sqlQuery coincides with a ResultTable object
+     * @param sqlQuery An SQL SELECT statement
+     * @param table The desired result as a ResultTable
+     */
+    public void testSelectWithTable(String sqlQuery,ResultsTable table) {
+        // We use testSelect() with an elaborate Asserter
+        testSelect(sqlQuery,(rs)->{
+            String[] colNames=table.getColumnNames(); // Local cache column names
+            int numCol=colNames.length; // Number of columns
+
+            for (String[] row: table.getQueryResults()) {
+                // Check that next row is available in the results set
+                Assert.assertTrue(rs.next());
+
+                // Assert the number of cells in the row first
+                Assert.assertEquals(row.length,numCol);
+
+                // Loop over all columns colInd=column index
+                for (int colInd = 0; colInd < numCol; colInd++) {
+                    // Check every cell of the row
+                    // I use trim() just in case
+                    Assert.assertEquals(row[colInd].trim(),rs.getString(colNames[colInd]).trim());
+                }
+
+            }
+
+            // Finally check that there is no more results in the results set
+            Assert.assertFalse(rs.next());
+
+        });
+
     }
 
 }
