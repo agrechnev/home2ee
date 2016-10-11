@@ -3,7 +3,7 @@ package agrechnev;
 /**
  * Hello world!
  *
- * A dummy placeholder to create java directory in git
+ * A dummy placeholder to create main/java directory in git
  */
 public class App 
 {

@@ -1,1 +1,4 @@
-echo "Hello world !"
+rem Run sql scripts with user %1 and password %2
+
+mysql --user=%1 --password=%2  <%0\..\db_setup.sql
+mysql --user=%1 --password=%2  <%0\..\db_inserts.sql

@@ -53,6 +53,10 @@ public enum DBTester {
     // Constructor: runs once for a single instance
     DBTester() {
         System.out.println("Reading DBTester configuration ...");
+        System.out.println("DB_DRIVER="+DB_DRIVER);
+        System.out.println("DB_URL="+DB_URL);
+        System.out.println("DB_USER="+DB_USER);
+        System.out.println("DB_PASSWORD="+DB_PASSWORD);
 
         // Read the configuration file scripts/dbtester.config
         Properties config = new Properties();
@@ -111,10 +115,11 @@ public enum DBTester {
 
         // First, run the init script: different for Win and Unix
         try {
-            Runtime.getRuntime()
-                    .exec(runsOnWindows ? "scripts/init.bat " : "scripts/init.sh " +
-                            DB_USER + " " + DB_PASSWORD)
-                    .waitFor();
+
+            String command = (runsOnWindows ? "scripts\\init.bat " : "scripts/init.sh ") +
+                    DB_USER + " " + DB_PASSWORD;
+
+            Runtime.getRuntime().exec(command).waitFor();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             // Exception means failed test
