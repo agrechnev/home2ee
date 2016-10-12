@@ -2,7 +2,7 @@ DBTester
 
 SQL SELECT unit testing mini-framework by Oleksiy Grechnyev
 
-It has 3 level of testing:
+It has 3 levels of testing:
 
 --
  testSelect
@@ -18,14 +18,20 @@ Test the query results against a ResultTable object
 Runs an SQL SELECT query with both JDBC and an external SQL client and compare results
 --
 
-Usage: Run one of the 3 test methods from within a JUnit test routine. See RunDBTests.java for examples.
+Usage: Run any of the 3 test methods from within a JUnit test routine. See RunDBTests.java for examples.
 
 You will need to edit up the configuration file  scripts/dbtester.config
 
-It contains JDBC connection parameters, plus one extra parameter DB_INITBEFOREEACH :
+It contains JDBC connection parameters
+DB_DRIVER, DB_URL, DB_DATABASE, DB_USER, DB_PASSWORD
+Note DB_DATABASE is required for the full auto tests,
+plus one extra parameter DB_INITBEFOREEACH :
   DB_INITBEFOREEACH =true : run init scripts before each unit test (very slow)
   DB_INITBEFOREEACH = false : run init scripts only once
 
 The scripts in the scripts/ directory are for MySQL, the method ResultsTable.readFromTableFile() is also tested
 for MySQL only. Small modifications might be required for other SQL databases. The executable "mysql" must be
 in your path, and your OS must be either Windows (.bat scripts) or Unix/Linux (.sh scripts).
+
+Note on the tests from the SQL book. I did the first few with testSelectWithTable,
+and the rest with testSelectFullAuto

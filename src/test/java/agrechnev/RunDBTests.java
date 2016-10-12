@@ -117,8 +117,93 @@ public class RunDBTests {
     // And now the Full Auto tests
     @Test
     public void test163_2() {
-        DBTester.INSTANCE.testSelectFullAuto("home2ee",
+        DBTester.INSTANCE.testSelectFullAuto(
             "SELECT ORDER_NUM,AMOUNT,DESCRIPTION FROM ORDERS,PRODUCTS WHERE MFR=MFR_ID AND PRODUCT=PRODUCT_ID;");
+    }
+
+    @Test
+    public void test163_3() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT ORDER_NUM,AMOUNT,DESCRIPTION FROM ORDERS JOIN PRODUCTS ON MFR=MFR_ID AND" +
+                        " PRODUCT=PRODUCT_ID;");
+    }
+
+
+    @Test
+    public void test165() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT ORDER_NUM,AMOUNT,COMPANY,NAME FROM ORDERS,CUSTOMERS,SALESREPS WHERE CUST=CUST_NUM" +
+                        " AND REP=EMPL_NUM AND AMOUNT>25000.00;");
+    }
+
+    @Test
+    public void test165_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT ORDER_NUM,AMOUNT,COMPANY,NAME FROM ORDERS JOIN CUSTOMERS ON  CUST=CUST_NUM JOIN" +
+                        " SALESREPS ON REP=EMPL_NUM WHERE AMOUNT>25000.00;");
+    }
+
+
+    @Test
+    public void test166() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT ORDER_NUM,AMOUNT,COMPANY,NAME FROM ORDERS JOIN CUSTOMERS ON  CUST=CUST_NUM JOIN" +
+                        " SALESREPS ON REP=EMPL_NUM WHERE AMOUNT>25000.00;");
+    }
+
+    @Test
+    public void test167() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT ORDER_NUM,AMOUNT,COMPANY,NAME,CITY FROM ORDERS,CUSTOMERS,SALESREPS,OFFICES" +
+                        " WHERE CUST=CUST_NUM AND CUST_REP=EMPL_NUM AND REP_OFFICE=OFFICE AND AMOUNT>25000.00;");
+    }
+
+
+    @Test
+    public void test169() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT ORDER_NUM,AMOUNT,ORDER_DATE,NAME FROM ORDERS, SALESREPS WHERE ORDER_DATE=HIRE_DATE;");
+    }
+
+
+    @Test
+    public void test170() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,QUOTA,CITY,TARGET FROM SALESREPS,OFFICES WHERE QUOTA>TARGET;");
+    }
+
+
+    @Test
+    public void test171() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY,SALES FROM OFFICES WHERE SALES>TARGET;");
+    }
+
+
+    @Test
+    public void test172() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,SALES FROM SALESREPS WHERE SALES > 350000.00;");
+    }
+
+    @Test
+    public void test172_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,SALESREPS.SALES,CITY FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE;");
+    }
+
+
+    @Test
+    public void test173() {
+        // Here we really really need this false: 2 columns with the same name !
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT * FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE;",false);
+    }
+
+    @Test
+    public void test173_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT SALESREPS.*,CITY,REGION FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE;");
     }
 
 }
