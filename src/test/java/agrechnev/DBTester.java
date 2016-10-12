@@ -4,6 +4,7 @@ import org.junit.Assert;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
@@ -19,6 +20,9 @@ import java.util.Properties;
  * <p>
  * The connection is configured by the file scripts/dbtester.config
  * with a trivial syntax
+ * Execpt for DB_INITBEFOREEACH :
+ * DB_INITBEFOREEACH =true : run init scripts before each unit test (very slow)
+ * DB_INITBEFOREEACH = false : run init scripts only once
  */
 
 public enum DBTester {
@@ -44,6 +48,7 @@ public enum DBTester {
     private String DB_URL;
     private String DB_USER;
     private String DB_PASSWORD;
+    private boolean DB_INITBEFOREEACH;
 
     // True if runs on windows, otherwise assume Unix/Linux
     // It's ugly to run .bat/.sh files without this check
@@ -64,6 +69,7 @@ public enum DBTester {
             DB_URL = config.getProperty("DB_URL");
             DB_USER = config.getProperty("DB_USER");
             DB_PASSWORD = config.getProperty("DB_PASSWORD");
+            DB_INITBEFOREEACH = Boolean.parseBoolean(config.getProperty("DB_INITBEFOREEACH"));
 
         } catch (IOException e) {
             System.err.println("Error: Cannot find file scripts/dbtester.config ");
@@ -75,23 +81,35 @@ public enum DBTester {
         System.out.println("DB_URL="+DB_URL);
         System.out.println("DB_USER="+DB_USER);
         System.out.println("DB_PASSWORD="+DB_PASSWORD);
+        System.out.println("DB_INITBEFOREEACH="+DB_INITBEFOREEACH);
 
         // Check for Windows vs Unix
         String os = System.getProperty("os.name").toLowerCase();
         runsOnWindows = os.contains("win");
 
-        // Ensure the exectutable permission of the Unix script scripts/init.sh
+        // Ensure the exectutable permission of the Unix scripts scripts/init.sh, scripts/run.sh
         // Do not quit on exception, only print the error message
         try {
-            if (!runsOnWindows) Runtime.getRuntime().exec("chmod a+x scripts/init.sh").waitFor();
+            if (!runsOnWindows) {
+                Runtime.getRuntime().exec("chmod a+x scripts/init.sh").waitFor();
+                Runtime.getRuntime().exec("chmod a+x scripts/run.sh").waitFor();
+            }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+        }
+
+        // First, run the init script if DB_INITBEFOREEACH=false
+        // Exit if unsuccessful
+        if (!DB_INITBEFOREEACH) {
+            /*if (!runInitScript()) {
+                System.exit(1);
+            }*/
         }
     }
 
     /**
-     * Test a single SQL SELECT statement:
-     * <p>
+     * Test a single SQL SELECT statement with a supplied function asserter:
+     *
      * First runs the init script to set up the database
      * Then open the connection, executet he quesry and check the results with asserter
      *
@@ -114,18 +132,11 @@ public enum DBTester {
         // is extremely inefficient
         // I do it to ensure a clean test
 
-        // First, run the init script: different for Win and Unix
-        /*try {
+        // First, run the init script if DB_INITBEFOREEACH=true
+        // Fail test if unsuccessful
+        if (DB_INITBEFOREEACH) Assert.assertTrue(runInitScript());
 
-            String command = (runsOnWindows ? "scripts\\init.bat " : "scripts/init.sh ") +
-                    DB_USER + " " + DB_PASSWORD;
-
-            Runtime.getRuntime().exec(command).waitFor();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            // Exception means failed test
-            Assert.fail();
-        }*/
+        System.out.println(sqlQuery); // Print the query
 
         // Load the DB driver
         // Not needed nowadays, but wouldn't hurt
@@ -160,7 +171,11 @@ public enum DBTester {
         // We use testSelect() with an elaborate Asserter
         testSelect(sqlQuery,(rs)->{
             String[] colNames=table.getColumnNames(); // Local cache column names
-            int numCol=colNames.length; // Number of columns
+            int numCol=colNames.length; // Number of columns in colNames
+
+            // Assert that numCol matches the column count from the result set
+            Assert.assertEquals(rs.getMetaData().getColumnCount(),numCol);
+
 
             for (String[] row: table.getQueryResults()) {
                 // Check that next row is available in the results set
@@ -169,11 +184,12 @@ public enum DBTester {
                 // Assert the number of cells in the row first
                 Assert.assertEquals(row.length,numCol);
 
+
                 // Loop over all columns colInd=column index
                 for (int colInd = 0; colInd < numCol; colInd++) {
                     // Check every cell of the row
                     // I use trim() just in case
-                    Assert.assertEquals(row[colInd].trim(),rs.getString(colNames[colInd]).trim());
+                    Assert.assertEquals(row[colInd].trim(),rs.getString(colNames[colInd].trim()).trim());
                 }
 
             }
@@ -183,6 +199,66 @@ public enum DBTester {
 
         });
 
+    }
+
+    public void testSelectFullAuto(String database, String sqlQuery){
+        try {
+
+            // Run the query with external SQL
+            // I use the external script file for that
+            // One could have used mysql -e "SELECT ...;"
+            // But external file is more robust if the query is long or contains special chars
+
+            try (PrintWriter out=new PrintWriter(Files.newBufferedWriter(Paths.get("temp.sql")))){
+                if (database != null) {
+                    out.println("USE "+database+";"); //Add the SQL use statement
+                }
+                out.println(sqlQuery); // Add the query
+            };
+
+            // Run MySql client with the query file via run.bat or run.sh script
+
+            String command = (runsOnWindows ? "scripts\\run.bat " : "scripts/run.sh ") +
+                    DB_USER + " " + DB_PASSWORD;
+            Runtime.getRuntime().exec(command).waitFor();
+
+            // Read the table from file
+            ResultsTable table=ResultsTable.readFromTableFile("temp.dat");
+
+            // Test with the table
+            testSelectWithTable(sqlQuery,table);
+
+            // Remove the temp files
+            Files.delete(Paths.get("temp.sql"));
+            Files.delete(Paths.get("temp.dat"));
+
+
+        } catch (InterruptedException|IOException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+    }
+
+
+    /**
+     * Run the init script for the SQL database
+     * @return true is successful, false if exception
+     */
+    private boolean runInitScript(){
+        try {
+            System.out.println("Running init scripts ...");
+
+            // different for Win and Unix
+            String command = (runsOnWindows ? "scripts\\init.bat " : "scripts/init.sh ") +
+                    DB_USER + " " + DB_PASSWORD;
+
+            Runtime.getRuntime().exec(command).waitFor();
+            return true;
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }
