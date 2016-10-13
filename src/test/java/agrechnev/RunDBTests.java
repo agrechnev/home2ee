@@ -206,4 +206,92 @@ public class RunDBTests {
                 "SELECT SALESREPS.*,CITY,REGION FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE;");
     }
 
+
+    @Test
+    public void test173_3() {
+        // Note: The result set is empty for this test
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT * FROM SALESREPS WHERE MANAGER=EMPL_NUM;");
+    }
+
+    @Test
+    public void test175() {
+        // Two "NAME" columns: we need false here
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT EMPS.NAME, MGRS.NAME FROM SALESREPS EMPS, SALESREPS MGRS WHERE EMPS.MANAGER=MGRS.EMPL_NUM;",
+                false);
+    }
+
+
+    @Test
+    public void test175_2() {
+        // Two "NAME" columns: we need false here
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT SALESREPS.NAME, MGRS.NAME FROM SALESREPS, SALESREPS MGRS" +
+                        " WHERE SALESREPS.MANAGER=MGRS.EMPL_NUM;",
+                false);
+    }
+
+    @Test
+    public void test175_3() {
+        // Two "QUOTA" columns: we need false here
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT SALESREPS.NAME, SALESREPS.QUOTA, MGRS.QUOTA FROM SALESREPS, SALESREPS MGRS" +
+                        " WHERE SALESREPS.MANAGER=MGRS.EMPL_NUM AND SALESREPS.QUOTA>MGRS.QUOTA;",
+                false);
+    }
+
+
+    @Test
+    public void test176() {
+        // Repeated column names: we need false here
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT EMPS.NAME,EMP_OFFICE.CITY,MGRS.NAME,MGR_OFFICE.CITY " +
+                        "FROM SALESREPS EMPS, SALESREPS MGRS, OFFICES EMP_OFFICE, OFFICES MGR_OFFICE " +
+                        "WHERE EMPS.REP_OFFICE = EMP_OFFICE.OFFICE AND MGRS.REP_OFFICE=MGR_OFFICE.OFFICE " +
+                        "AND EMPS.MANAGER=MGRS.EMPL_NUM AND EMPS.REP_OFFICE<>MGRS.REP_OFFICE;",
+                false);
+    }
+
+
+    @Test
+    public void test179() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,CITY FROM SALESREPS,OFFICES;");
+    }
+
+    @Test
+    public void test180() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,CITY FROM SALESREPS,OFFICES WHERE REP_OFFICE=OFFICE;");
+    }
+
+    @Test
+    public void test180_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COMPANY,ORDER_NUM,AMOUNT FROM CUSTOMERS JOIN ORDERS ON CUST_NUM=CUST " +
+                        "WHERE CUST_NUM=2103 ORDER BY ORDER_NUM;");
+    }
+
+
+    @Test
+    public void test182() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,REP_OFFICE FROM SALESREPS;");
+    }
+
+    @Test
+    public void test182_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,REP_OFFICE FROM SALESREPS JOIN OFFICES ON REP_OFFICE=OFFICE;");
+    }
+
+
+    @Test
+    public void test183() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,REP_OFFICE FROM SALESREPS LEFT OUTER JOIN OFFICES ON REP_OFFICE=OFFICE;");
+    }
+
+
 }

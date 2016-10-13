@@ -98,7 +98,10 @@ public final class ResultsTable {
         try(BufferedReader in= Files.newBufferedReader(Paths.get(fileName))) {
             String line;
 
-            in.readLine(); // Skip the 1st line
+            line=in.readLine(); // Skip the 1st line
+
+            // The empty table case: return instance (null,empty ArrayList)
+            if (line==null) return newInstance;
 
             line=in.readLine(); // Read the column names (2nd) line
             // Remove the leading and trailing '|' chars before splitting

@@ -179,14 +179,23 @@ public enum DBTester {
     public void testSelectWithTable(String sqlQuery,ResultsTable table,boolean useColumnNames) {
         // We use testSelect() with an elaborate Asserter
         testSelect(sqlQuery,(rs)->{
-            String[] colNames=table.getColumnNames(); // Local cache column names
-            int numCol=colNames.length; // Number of columns in colNames
 
-            // Assert that numCol matches the column count from the result set
-            Assert.assertEquals(rs.getMetaData().getColumnCount(),numCol);
+            // Note:  if the result set is empty
+            //  table.getColumnNames() is allowed to be NULL
+            // That is why I put column count check into the row: foreach loop
+            // If empty table.getColumnNames() we skip the foreach loop and do one check
+            // Assert.assertFalse(rs.next());
+
+            String[] colNames=table.getColumnNames(); // Local cache column names
 
 
             for (String[] row: table.getQueryResults()) {
+
+                int numCol=colNames.length; // Number of columns in colNames
+
+                // Assert that numCol matches the column count from the result set
+                Assert.assertEquals(rs.getMetaData().getColumnCount(),numCol);
+
                 // Check that next row is available in the results set
                 Assert.assertTrue(rs.next());
 
