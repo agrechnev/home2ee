@@ -9,15 +9,15 @@ import java.io.IOException;
  * Uses DBTester
  * Created by Oleksiy Grechnyev
  *
- * Note: I used testSelectWithTable for the first few tests (158-163)
+ * Note: I used testSelectUTable for the first few tests (158-163)
  * And then switch to the more efficient testSelectFullAuto
  * */
 
-public class RunDBTests {
-    public static final String SEPARATOR = "\\s*\\|\\s*"; // separator regex for testSelectWithTable
+public class RunDBTest {
+    public static final String SEPARATOR = "\\s*\\|\\s*"; // separator regex for testSelectUTable
     /*
     // A sample test with testSelect
-    // Other wise I only use testSelectWithTable
+    // Otherwise I only use testSelectUTable
     @Test
     public void test_user(){
         DBTester.INSTANCE.testSelect("SELECT user();",rs -> {
@@ -27,8 +27,7 @@ public class RunDBTests {
         });
     }*/
 
-    // Tests158-163 demonstrate testing with testSelectWithTable()
-
+    // Tests158-163 demonstrate testing with testSelectUTable()
 
 
     @Test
@@ -37,7 +36,7 @@ public class RunDBTests {
              new String[]{"ORDER_NUM","AMOUNT","COMPANY","CREDIT_LIMIT"},
                 "tables/t158.dat", SEPARATOR);
 
-        DBTester.INSTANCE.testSelectWithTable(
+        DBTester.INSTANCE.testSelectUTable(
                 "SELECT ORDER_NUM,AMOUNT,COMPANY,CREDIT_LIMIT FROM ORDERS,CUSTOMERS WHERE CUST=CUST_NUM;",
                 table);
     }
@@ -48,7 +47,7 @@ public class RunDBTests {
              new String[]{"NAME" , "CITY" , "REGION"},
                 "tables/t159.dat", SEPARATOR);
 
-        DBTester.INSTANCE.testSelectWithTable(
+        DBTester.INSTANCE.testSelectUTable(
                 "SELECT NAME , CITY , REGION FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE;",
                 table);
     }
@@ -60,7 +59,7 @@ public class RunDBTests {
                 new String[]{"CITY", "NAME" ,"TITLE"},
                 "tables/t161.dat", SEPARATOR);
 
-        DBTester.INSTANCE.testSelectWithTable(
+        DBTester.INSTANCE.testSelectUTable(
                 "SELECT CITY,NAME,TITLE FROM OFFICES,SALESREPS WHERE MGR=EMPL_NUM;",
                 table);
     }
@@ -71,7 +70,7 @@ public class RunDBTests {
                 new String[]{"NAME", "CITY", "REGION"},
                 "tables/t161_2.dat", SEPARATOR);
 
-        DBTester.INSTANCE.testSelectWithTable(
+        DBTester.INSTANCE.testSelectUTable(
                 "SELECT NAME,CITY,REGION FROM SALESREPS JOIN OFFICES ON REP_OFFICE=OFFICE;",
                 table);
     }
@@ -83,7 +82,7 @@ public class RunDBTests {
                 new String[]{"CITY", "NAME" ,"TITLE"},
                 "tables/t162.dat", SEPARATOR);
 
-        DBTester.INSTANCE.testSelectWithTable(
+        DBTester.INSTANCE.testSelectUTable(
                 "SELECT CITY, NAME, TITLE FROM OFFICES JOIN SALESREPS ON MGR=EMPL_NUM",
                 table);
     }
@@ -95,7 +94,7 @@ public class RunDBTests {
                 new String[]{"CITY", "NAME" ,"TITLE"},
                 "tables/t162_2.dat", SEPARATOR);
 
-        DBTester.INSTANCE.testSelectWithTable(
+        DBTester.INSTANCE.testSelectUTable(
                 "SELECT CITY, NAME, TITLE FROM OFFICES, SALESREPS WHERE MGR=EMPL_NUM AND TARGET>600000.00;",
                 table);
     }
@@ -107,14 +106,14 @@ public class RunDBTests {
                 new String[]{"CITY", "NAME" ,"TITLE"},
                 "tables/t163.dat", SEPARATOR);
 
-        DBTester.INSTANCE.testSelectWithTable(
+        DBTester.INSTANCE.testSelectUTable(
                 "SELECT CITY, NAME, TITLE FROM OFFICES JOIN SALESREPS ON MGR=EMPL_NUM WHERE TARGET>600000.00;",
                 table);
     }
 
 
     //-----------------------------------
-    // And now the Full Auto tests
+    // And now the Full Auto tests : lots of them
     @Test
     public void test163_2() {
         DBTester.INSTANCE.testSelectFullAuto(
@@ -292,6 +291,277 @@ public class RunDBTests {
         DBTester.INSTANCE.testSelectFullAuto(
                 "SELECT NAME,REP_OFFICE FROM SALESREPS LEFT OUTER JOIN OFFICES ON REP_OFFICE=OFFICE;");
     }
+
+    @Test
+    public void test187() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,CITY FROM SALESREPS LEFT OUTER JOIN OFFICES ON REP_OFFICE=OFFICE;");
+    }
+
+    @Test
+    public void test187_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,CITY FROM OFFICES RIGHT OUTER JOIN SALESREPS ON REP_OFFICE=OFFICE;");
+    }
+
+    @Test
+    public void test188() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY,NAME FROM OFFICES LEFT OUTER JOIN SALESREPS ON OFFICE=REP_OFFICE;");
+    }
+
+    @Test
+    public void test204() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT AVG(QUOTA), AVG(SALES) FROM SALESREPS;");
+    }
+
+    @Test
+    public void test205() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT AVG(100 * SALES/QUOTA) FROM SALESREPS;");
+    }
+
+    @Test
+    public void test206() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT SUM(QUOTA), SUM(SALES) FROM SALESREPS;");
+    }
+
+
+    @Test
+    public void test206_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT SUM(AMOUNT) FROM ORDERS,SALESREPS WHERE NAME='Bill Adams' AND REP=EMPL_NUM;");
+    }
+
+    @Test
+    public void test206_3() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT AVG(PRICE) FROM PRODUCTS WHERE MFR_ID='ACI';");
+    }
+
+
+    @Test
+    public void test206_4() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT AVG(AMOUNT) FROM ORDERS WHERE CUST=2103;");
+    }
+
+
+    @Test
+    public void test207() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT MIN(QUOTA),MAX(QUOTA) FROM SALESREPS;");
+    }
+
+
+    @Test
+    public void test207_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT MIN(ORDER_DATE) FROM ORDERS;");
+    }
+
+    @Test
+    public void test207_3() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT MAX(100 * SALES/QUOTA) FROM SALESREPS;");
+    }
+
+
+    @Test
+    public void test208() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(CUST_NUM) FROM CUSTOMERS;");
+    }
+
+
+    @Test
+    public void test208_1() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(NAME) FROM SALESREPS WHERE SALES>QUOTA;");
+    }
+
+    @Test
+    public void test209() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(AMOUNT) FROM ORDERS WHERE AMOUNT>25000.00;");
+    }
+
+
+    @Test
+    public void test209_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(ORDER_NUM) FROM ORDERS WHERE AMOUNT>25000.00;");
+    }
+
+    @Test
+    public void test209_3() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(*) FROM ORDERS WHERE AMOUNT>25000.00;");
+    }
+
+    @Test
+    public void test210() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT AVG(AMOUNT), SUM(AMOUNT), (100* AVG(AMOUNT/CREDIT_LIMIT)), (100* AVG(AMOUNT/QUOTA))" +
+                        " FROM ORDERS,CUSTOMERS,SALESREPS WHERE CUST=CUST_NUM AND REP=EMPL_NUM;");
+    }
+
+
+    @Test
+    public void test211() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT AMOUNT, AMOUNT, AMOUNT/CREDIT_LIMIT, AMOUNT/QUOTA" +
+                        " FROM ORDERS,CUSTOMERS,SALESREPS WHERE CUST=CUST_NUM AND REP=EMPL_NUM;");
+    }
+
+    @Test
+    public void test211_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME,SUM(SALES) FROM SALESREPS;");
+    }
+
+    @Test
+    public void test212() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(*),COUNT(SALES),COUNT(QUOTA) FROM SALESREPS;");
+    }
+
+    @Test
+    public void test212_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT SUM(SALES),SUM(QUOTA),(SUM(SALES)-SUM(QUOTA)),SUM(SALES-QUOTA) FROM SALESREPS;");
+    }
+
+
+    @Test
+    public void test214() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(DISTINCT TITLE) FROM SALESREPS;");
+    }
+
+
+    @Test
+    public void test214_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(DISTINCT REP_OFFICE) FROM SALESREPS WHERE SALES>QUOTA;");
+    }
+
+    @Test
+    public void test215() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT AVG(AMOUNT) FROM ORDERS;");
+    }
+
+    @Test
+    public void test215_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT REP,AVG(AMOUNT) FROM ORDERS GROUP BY REP;");
+    }
+
+
+    @Test
+    public void test216() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT REP_OFFICE, MIN(QUOTA), MAX(QUOTA) FROM SALESREPS GROUP BY REP_OFFICE;");
+    }
+
+    @Test
+    public void test216_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT REP_OFFICE, COUNT(*) FROM SALESREPS GROUP BY REP_OFFICE;");
+    }
+
+    @Test
+    public void test216_3() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COUNT(DISTINCT CUST_NUM), 'customers for salesrep', CUST_REP" +
+                        " FROM CUSTOMERS GROUP BY CUST_REP;");
+    }
+
+    @Test
+    public void test218() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT REP,CUST, SUM(AMOUNT) FROM ORDERS GROUP BY REP,CUST;");
+    }
+
+
+    @Test
+    public void test218_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT REP,CUST, SUM(AMOUNT) FROM ORDERS GROUP BY REP,CUST WITH ROLLUP;");
+    }
+
+    @Test
+    public void test220() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT REP,CUST, SUM(AMOUNT) FROM ORDERS GROUP BY CUST,REP ORDER BY CUST,REP;");
+    }
+
+    @Test
+    public void test221() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT EMPL_NUM, NAME, SUM(AMOUNT) FROM ORDERS,SALESREPS WHERE REP=EMPL_NUM GROUP BY EMPL_NUM;");
+    }
+
+
+    @Test
+    public void test221_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT EMPL_NUM, NAME, SUM(AMOUNT) FROM ORDERS,SALESREPS" +
+                        " WHERE REP=EMPL_NUM GROUP BY EMPL_NUM, NAME;");
+    }
+
+    @Test
+    public void test222() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, SUM(AMOUNT) FROM ORDERS,SALESREPS WHERE REP=EMPL_NUM GROUP BY NAME;");
+    }
+
+
+    @Test
+    public void test223() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT REP, AVG(AMOUNT) FROM ORDERS GROUP BY REP HAVING SUM(AMOUNT)>30000.00;");
+    }
+
+
+    @Test
+    public void test224() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY, SUM(QUOTA), SUM(SALESREPS.SALES) FROM OFFICES, SALESREPS" +
+                        " WHERE OFFICE=REP_OFFICE GROUP BY CITY HAVING COUNT(*)>=2;");
+    }
+
+    @Test
+    public void test226() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT DESCRIPTION, PRICE, QTY_ON_HAND, SUM(QTY) FROM PRODUCTS, ORDERS" +
+                        " WHERE MFR=MFR_ID AND PRODUCT=PRODUCT_ID" +
+                        " GROUP BY MFR_ID, PRODUCT_ID, DESCRIPTION, PRICE, QTY_ON_HAND" +
+                        " HAVING SUM(QTY)>(.75 * QTY_ON_HAND) ORDER BY QTY_ON_HAND DESC;");
+    }
+
+
+    @Test
+    public void test230() {
+        DBTester.INSTANCE.testSelectFullAuto(
+              "SELECT CITY FROM OFFICES WHERE TARGET> (SELECT SUM(QUOTA) FROM SALESREPS WHERE REP_OFFICE=OFFICE);");
+    }
+
+    @Test
+    public void test232() {
+        DBTester.INSTANCE.testSelectFullAuto(
+              "SELECT NAME FROM SALESREPS WHERE QUOTA < (.1 * (SELECT SUM(TARGET) FROM OFFICES));");
+    }
+
+    @Test
+    public void test232_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+              "SELECT NAME FROM SALESREPS WHERE QUOTA < (SELECT (SUM(TARGET) * .1) FROM OFFICES);");
+    }
+
 
 
 }

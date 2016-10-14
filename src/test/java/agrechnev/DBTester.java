@@ -8,6 +8,9 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -23,6 +26,13 @@ import java.util.Properties;
  * Execpt for DB_INITBEFOREEACH :
  * DB_INITBEFOREEACH =true : run init scripts before each unit test (very slow)
  * DB_INITBEFOREEACH = false : run init scripts only once
+ *
+ * Contains 3 levels of tests:
+ * 1. testSelect
+ * 2. testSelectTable, testSelectUTable
+ * 3. testSelectFullAuto
+ *
+ * See descriptions below
  */
 
 public enum DBTester {
@@ -131,6 +141,8 @@ public enum DBTester {
      *
      */
     public void testSelect(String sqlQuery, Asserter asserter) {
+        if (sqlQuery == null || asserter==null) Assert.fail();
+
         // Running script before each test and opening a new connection
         // is extremely inefficient
         // I do it to ensure a clean test
@@ -167,16 +179,22 @@ public enum DBTester {
 
     /**
      * Test whether the result of the sqlQuery coincides with a ResultTable object
+     * This version requires rows of the table to go in the same order as in the results set
+     * This might fail between different SQL server products or versions
+     * e.g. MySQL vs MariaDB
+     *
      * @param sqlQuery An SQL SELECT statement
      * @param table The desired result as a ResultTable
-     * @param useColumnNames   true=check column names, false=read columns by number
+     * @param useColumnNames   true=read columns by names, false=read columns by numbers
      *
      * Note: I had to introduce the latter option because of multiple columns with same name
      *  from different tables in some searches, must use false then
      *
      * I also add an overloaded version without it below
      */
-    public void testSelectWithTable(String sqlQuery,ResultsTable table,boolean useColumnNames) {
+    public void testSelectTable(String sqlQuery, ResultsTable table, boolean useColumnNames) {
+        if (sqlQuery == null || table==null) Assert.fail();
+
         // We use testSelect() with an elaborate Asserter
         testSelect(sqlQuery,(rs)->{
 
@@ -209,8 +227,11 @@ public enum DBTester {
                     // I use trim() just in case
 
                     // Compare two strings from table and rs
-                    String stringTab = row[colInd].trim();
+                    String stringTab = row[colInd];
                     String stringRS;
+
+                    if (stringTab == null) Assert.fail();
+                    stringTab=stringTab.trim();
 
                     // Get the RS cell by either name or number
                     if (useColumnNames) {
@@ -219,11 +240,16 @@ public enum DBTester {
                         stringRS = rs.getString(colInd+1);
                     }
 
-                    if (stringRS != null) stringRS=stringRS.trim();
+                    if (stringRS != null) {
+                        stringRS = stringRS.trim();
+                    } else {
+                        stringRS="NULL"; // Like in the text table
+                        // Note: NULL is a special case,
+                        // stringRS=NULL, stringTab="NULL"
+                    };
 
-                    // Note: NULL is a special case,
-                    // stringRS=NULL, stringTab="NULL"
-                    Assert.assertEquals(stringTab, stringRS==null ? "NULL" : stringRS);
+
+                    Assert.assertEquals(stringTab, stringRS);
                 }
 
             }
@@ -240,8 +266,8 @@ public enum DBTester {
      * @param sqlQuery An SQL SELECT statement
      * @param table The desired result as a ResultTable
      */
-    public void testSelectWithTable(String sqlQuery,ResultsTable table) {
-        testSelectWithTable(sqlQuery,table,true);
+    public void testSelectTable(String sqlQuery, ResultsTable table) {
+        testSelectTable(sqlQuery,table,true);
     }
 
     /**
@@ -254,7 +280,7 @@ public enum DBTester {
      * Uses database nade DB_DATABASE from the external query
      *
      * @param sqlQuery The query to be tested
-     * @param useColumnNames   true=check column names, false=read columns by number
+     * @param useColumnNames   true=read columns by names, false=read columns by numbers
      *
      * Note: I had to introduce the latter option because of multiple columns with same name
      *  from different tables in some searches, must use false then
@@ -262,6 +288,8 @@ public enum DBTester {
      * I also add an overloaded version without it below
      */
     public void testSelectFullAuto(String sqlQuery,boolean useColumnNames){
+        if (sqlQuery == null) Assert.fail();
+
         try {
 
             // Run the query with external SQL
@@ -286,7 +314,7 @@ public enum DBTester {
             ResultsTable table=ResultsTable.readFromTableFile("temp.dat");
 
             // Test with the table
-            testSelectWithTable(sqlQuery,table,useColumnNames);
+            testSelectTable(sqlQuery,table,useColumnNames);
 
             // Remove the temp files
             Files.delete(Paths.get("temp.sql"));
@@ -314,6 +342,155 @@ public enum DBTester {
     public void testSelectFullAuto(String sqlQuery){
         testSelectFullAuto(sqlQuery,true);
     }
+
+    /**
+     * Test whether the result of the sqlQuery coincides with a ResultTable object
+     * This version allows the result in any order
+     * It searches the table for correct order
+     * It is slower that the ordered version and it does not assert individual cells of a row
+     * Only a single assertTrue(row found)
+     *
+     * @param sqlQuery An SQL SELECT statement
+     * @param table The desired result as a ResultTable
+     * @param useColumnNames     true=read columns by names, false=read columns by numbers
+     *
+     * Note: I had to introduce the latter option because of multiple columns with same name
+     *  from different tables in some searches, must use false then
+     *
+     * I also add an overloaded version without it below
+     */
+    public void testSelectUTable(String sqlQuery, ResultsTable table, boolean useColumnNames){
+        if (sqlQuery == null || table==null) Assert.fail();
+
+
+        // We use testSelect() with an elaborate Asserter
+        testSelect(sqlQuery,(rs)->{
+            // Note:  if the result set is empty
+            //  table.getColumnNames() is allowed to be NULL
+
+            // Make a clone of the table's rows
+            // We are going  to remove matching rows one by one
+            ArrayList<String[]> rowsCopy=new ArrayList<String[]>(table.getQueryResults());
+            String[] colNames=table.getColumnNames(); // The column names
+
+            // Loop over all results set
+            // It is skipped for an empty set
+            while (rs.next()) {
+                // The single assert: we check that the current row of rs is matched
+                // to a rowsCopy element which is removed
+                // Individual cells are not asserted
+                Assert.assertTrue(matchAndRemove(rowsCopy,rs,colNames,useColumnNames));
+            }
+
+            // Finally check that we have used up all rows from the table
+            Assert.assertEquals(rowsCopy.size(),0);
+        });
+    }
+
+    /**
+     * Test whether the result of the sqlQuery coincides with a ResultTable object
+     * This version allows the result in any order
+     * It searches the table for correct order
+     * It is slower that the ordered version and it does not assert individual cells of a row
+     * Only a single assertTrue(row found)
+     *
+     * @param sqlQuery An SQL SELECT statement
+     * @param table The desired result as a ResultTable
+     *
+     * This is the version without useColumnNames
+     */
+    public void testSelectUTable(String sqlQuery, ResultsTable table) {
+        testSelectUTable(sqlQuery,table,true);
+    }
+
+    /**
+     *  Find a row in rowsCopy matching the current row of rs and remove it from the list
+     *
+     * @param rowsCopy          An araylist of rows
+     * @param rs                A ResultSet object
+     * @param colNames          Column names
+     * @param useColumnNames    true=use column names, false=column numbers
+     * @return                  true if successful, false otherwise
+     *
+     * @throws SQLException
+     */
+    private boolean matchAndRemove(List<String[]> rowsCopy, ResultSet rs, String[] colNames, boolean useColumnNames) throws SQLException {
+
+        // Check for nulls just in case
+        if (rowsCopy == null || rs==null)  return false;
+
+        // Iterate over all elements of rowsCopy
+        // I use iterator as it allows for a safe remove
+        Iterator<String[]> iterator=rowsCopy.iterator();
+
+        while (iterator.hasNext()) {
+            if (matchRow(iterator.next(),rs,colNames,useColumnNames)) {
+                // Found a matching row
+                iterator.remove(); // Remove this row
+                return true; // Successful
+            }
+        }
+
+        // Not found
+        return false;
+    }
+
+    /**
+     *  Check if row matches the current row of rs
+     *
+     * @param row               A rows
+     * @param rs                A ResultSet object
+     * @param colNames          Column names
+     * @param useColumnNames    true=use column names, false=column numbers
+     * @return                  true if matches, false otherwise
+     *
+     * @throws SQLException
+     */
+    private boolean matchRow(String[] row, ResultSet rs, String[] colNames, boolean useColumnNames) throws SQLException {
+        // Check that row and rs have the same column count
+        int numCol=row.length; // Column count
+        if (row==null ||  numCol != rs.getMetaData().getColumnCount()) return false;
+
+        // If useColumnNames=true check the size of colNames
+        if (useColumnNames) {
+            if (colNames==null || colNames.length!=numCol) return false;
+        }
+
+        // Loop over all columns colInd=column index
+        for (int colInd = 0; colInd < numCol; colInd++) {
+            // Check every cell of the row
+            // I use trim() just in case
+
+            // Get two strings from table and rs
+            String stringTab = row[colInd];
+            String stringRS;
+
+            if (stringTab == null) return false;
+            stringTab=stringTab.trim();
+
+            // Get the RS cell by either name or number
+            if (useColumnNames) {
+                stringRS = rs.getString(colNames[colInd].trim());
+            } else {
+                stringRS = rs.getString(colInd+1);
+            }
+
+            if (stringRS != null) {
+                stringRS = stringRS.trim();
+            } else {
+                stringRS="NULL"; // Like in the text table
+                // Note: NULL is a special case,
+                // stringRS=NULL, stringTab="NULL"
+            };
+
+            // Compare the two strings: must be equal
+            if (! stringTab.equals(stringRS) ) return false;
+
+        }
+
+        return true; // Passed all checks
+    }
+
 
 
     /**
