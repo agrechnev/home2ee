@@ -8,10 +8,10 @@ import java.io.IOException;
  * My SQL tests, part of Java EE Homework assignment 2
  * Uses DBTester
  * Created by Oleksiy Grechnyev
- *
+ * <p>
  * Note: I used testSelectUTable for the first few tests (158-163)
  * And then switch to the more efficient testSelectFullAuto
- * */
+ */
 
 public class RunDBTest {
     public static final String SEPARATOR = "\\s*\\|\\s*"; // separator regex for testSelectUTable
@@ -32,8 +32,8 @@ public class RunDBTest {
 
     @Test
     public void test158() throws IOException {
-        ResultsTable table=ResultsTable.readFromDataFile(
-             new String[]{"ORDER_NUM","AMOUNT","COMPANY","CREDIT_LIMIT"},
+        ResultsTable table = ResultsTable.readFromDataFile(
+                new String[]{"ORDER_NUM", "AMOUNT", "COMPANY", "CREDIT_LIMIT"},
                 "tables/t158.dat", SEPARATOR);
 
         DBTester.INSTANCE.testSelectUTable(
@@ -43,8 +43,8 @@ public class RunDBTest {
 
     @Test
     public void test159() throws IOException {
-        ResultsTable table=ResultsTable.readFromDataFile(
-             new String[]{"NAME" , "CITY" , "REGION"},
+        ResultsTable table = ResultsTable.readFromDataFile(
+                new String[]{"NAME", "CITY", "REGION"},
                 "tables/t159.dat", SEPARATOR);
 
         DBTester.INSTANCE.testSelectUTable(
@@ -55,8 +55,8 @@ public class RunDBTest {
 
     @Test
     public void test161() throws IOException {
-        ResultsTable table=ResultsTable.readFromDataFile(
-                new String[]{"CITY", "NAME" ,"TITLE"},
+        ResultsTable table = ResultsTable.readFromDataFile(
+                new String[]{"CITY", "NAME", "TITLE"},
                 "tables/t161.dat", SEPARATOR);
 
         DBTester.INSTANCE.testSelectUTable(
@@ -66,7 +66,7 @@ public class RunDBTest {
 
     @Test
     public void test161_2() throws IOException {
-        ResultsTable table=ResultsTable.readFromDataFile(
+        ResultsTable table = ResultsTable.readFromDataFile(
                 new String[]{"NAME", "CITY", "REGION"},
                 "tables/t161_2.dat", SEPARATOR);
 
@@ -78,8 +78,8 @@ public class RunDBTest {
 
     @Test
     public void test162() throws IOException {
-        ResultsTable table=ResultsTable.readFromDataFile(
-                new String[]{"CITY", "NAME" ,"TITLE"},
+        ResultsTable table = ResultsTable.readFromDataFile(
+                new String[]{"CITY", "NAME", "TITLE"},
                 "tables/t162.dat", SEPARATOR);
 
         DBTester.INSTANCE.testSelectUTable(
@@ -90,8 +90,8 @@ public class RunDBTest {
 
     @Test
     public void test162_2() throws IOException {
-        ResultsTable table=ResultsTable.readFromDataFile(
-                new String[]{"CITY", "NAME" ,"TITLE"},
+        ResultsTable table = ResultsTable.readFromDataFile(
+                new String[]{"CITY", "NAME", "TITLE"},
                 "tables/t162_2.dat", SEPARATOR);
 
         DBTester.INSTANCE.testSelectUTable(
@@ -102,8 +102,8 @@ public class RunDBTest {
 
     @Test
     public void test163() throws IOException {
-        ResultsTable table=ResultsTable.readFromDataFile(
-                new String[]{"CITY", "NAME" ,"TITLE"},
+        ResultsTable table = ResultsTable.readFromDataFile(
+                new String[]{"CITY", "NAME", "TITLE"},
                 "tables/t163.dat", SEPARATOR);
 
         DBTester.INSTANCE.testSelectUTable(
@@ -117,7 +117,7 @@ public class RunDBTest {
     @Test
     public void test163_2() {
         DBTester.INSTANCE.testSelectFullAuto(
-            "SELECT ORDER_NUM,AMOUNT,DESCRIPTION FROM ORDERS,PRODUCTS WHERE MFR=MFR_ID AND PRODUCT=PRODUCT_ID;");
+                "SELECT ORDER_NUM,AMOUNT,DESCRIPTION FROM ORDERS,PRODUCTS WHERE MFR=MFR_ID AND PRODUCT=PRODUCT_ID;");
     }
 
     @Test
@@ -196,7 +196,7 @@ public class RunDBTest {
     public void test173() {
         // Here we really really need this false: 2 columns with the same name !
         DBTester.INSTANCE.testSelectFullAuto(
-                "SELECT * FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE;",false);
+                "SELECT * FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE;", false);
     }
 
     @Test
@@ -547,21 +547,214 @@ public class RunDBTest {
     @Test
     public void test230() {
         DBTester.INSTANCE.testSelectFullAuto(
-              "SELECT CITY FROM OFFICES WHERE TARGET> (SELECT SUM(QUOTA) FROM SALESREPS WHERE REP_OFFICE=OFFICE);");
+                "SELECT CITY FROM OFFICES WHERE TARGET> (SELECT SUM(QUOTA) FROM SALESREPS WHERE REP_OFFICE=OFFICE);");
     }
 
     @Test
     public void test232() {
         DBTester.INSTANCE.testSelectFullAuto(
-              "SELECT NAME FROM SALESREPS WHERE QUOTA < (.1 * (SELECT SUM(TARGET) FROM OFFICES));");
+                "SELECT NAME FROM SALESREPS WHERE QUOTA < (.1 * (SELECT SUM(TARGET) FROM OFFICES));");
     }
 
     @Test
     public void test232_2() {
         DBTester.INSTANCE.testSelectFullAuto(
-              "SELECT NAME FROM SALESREPS WHERE QUOTA < (SELECT (SUM(TARGET) * .1) FROM OFFICES);");
+                "SELECT NAME FROM SALESREPS WHERE QUOTA < (SELECT (SUM(TARGET) * .1) FROM OFFICES);");
+    }
+
+    @Test
+    public void test235() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME FROM SALESREPS WHERE QUOTA >=(SELECT TARGET FROM OFFICES WHERE CITY='Atlanta');");
+    }
+
+    @Test
+    public void test236() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COMPANY FROM CUSTOMERS WHERE CUST_REP=(SELECT EMPL_NUM FROM SALESREPS WHERE NAME='Bill Adams');");
+    }
+
+    @Test
+    public void test236_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT DESCRIPTION,QTY_ON_HAND FROM PRODUCTS WHERE MFR_ID='ACI' AND QTY_ON_HAND>" +
+                        "(SELECT QTY_ON_HAND FROM PRODUCTS WHERE MFR_ID='ACI' AND  PRODUCT_ID='41004');");
+    }
+
+    @Test
+    public void test237() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME FROM SALESREPS WHERE REP_OFFICE IN (SELECT OFFICE FROM OFFICES WHERE SALES>TARGET);");
+    }
+
+    @Test
+    public void test237_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME FROM SALESREPS WHERE REP_OFFICE NOT IN (SELECT OFFICE FROM OFFICES WHERE MGR=108);");
+    }
+
+    @Test
+    public void test238() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COMPANY FROM CUSTOMERS WHERE CUST_NUM IN" +
+                        " (SELECT DISTINCT CUST FROM ORDERS WHERE MFR='ACI' AND PRODUCT LIKE '4100%' AND" +
+                        " ORDER_DATE BETWEEN '2008-01-01' AND '2008-06-30');");
     }
 
 
+    @Test
+    public void test239() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT DISTINCT DESCRIPTION FROM PRODUCTS WHERE EXISTS" +
+                        " (SELECT ORDER_NUM FROM ORDERS WHERE PRODUCT=PRODUCT_ID" +
+                        " AND MFR=MFR_ID AND AMOUNT>25000.00);");
+    }
+
+    @Test
+    public void test240() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT DISTINCT DESCRIPTION FROM PRODUCTS WHERE EXISTS" +
+                        " (SELECT * FROM ORDERS WHERE PRODUCT=PRODUCT_ID" +
+                        " AND MFR=MFR_ID AND AMOUNT>25000.00);");
+    }
+
+
+    @Test
+    public void test240_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COMPANY FROM CUSTOMERS WHERE CUST_REP=(SELECT EMPL_NUM FROM SALESREPS WHERE NAME='Sue Smith')" +
+                        " AND NOT EXISTS (SELECT * FROM ORDERS WHERE CUST=CUST_NUM AND AMOUNT>3000.00);");
+    }
+
+    @Test
+    public void test240_3() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY FROM OFFICES WHERE EXISTS" +
+                        " (SELECT * FROM SALESREPS WHERE REP_OFFICE=OFFICE AND QUOTA>(.55*TARGET));");
+    }
+
+    @Test
+    public void test241() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME FROM SALESREPS WHERE (.1 * QUOTA) < " +
+                        "ANY (SELECT AMOUNT FROM ORDERS WHERE REP=EMPL_NUM);");
+    }
+
+
+    @Test
+    public void test243() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AGE FROM SALESREPS WHERE EMPL_NUM <> ANY (SELECT MGR FROM OFFICES);");
+    }
+
+    @Test
+    public void test243_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AGE FROM SALESREPS WHERE NOT (EMPL_NUM = ANY (SELECT MGR FROM OFFICES));");
+    }
+
+
+    @Test
+    public void test243_3() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AGE FROM SALESREPS WHERE NOT EXISTS (SELECT * FROM OFFICES WHERE EMPL_NUM=MGR);");
+    }
+
+
+    @Test
+    public void test244() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY, TARGET FROM OFFICES WHERE (.50 * TARGET) <" +
+                        " ALL (SELECT SALES FROM SALESREPS WHERE REP_OFFICE=OFFICE);");
+    }
+
+    @Test
+    public void test245() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AGE FROM SALESREPS WHERE REP_OFFICE IN" +
+                        " (SELECT OFFICE FROM OFFICES WHERE REGION='Western');");
+    }
+
+    @Test
+    public void test246() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AGE FROM SALESREPS, OFFICES WHERE REP_OFFICE=OFFICE AND REGION='Western';");
+    }
+
+
+    @Test
+    public void test246_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AGE FROM SALESREPS WHERE EXISTS" +
+                        " (SELECT * FROM OFFICES WHERE REGION='Western' AND REP_OFFICE=OFFICE);");
+    }
+
+
+    @Test
+    public void test247() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AGE FROM SALESREPS WHERE QUOTA> (SELECT AVG(QUOTA) FROM SALESREPS);");
+    }
+
+    @Test
+    public void test247_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT COMPANY FROM CUSTOMERS WHERE CUST_REP IN" +
+                        " (SELECT EMPL_NUM FROM SALESREPS WHERE REP_OFFICE IN" +
+                        " (SELECT OFFICE FROM OFFICES WHERE REGION='Eastern'));");
+    }
+
+
+    @Test
+    public void test248() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY FROM OFFICES WHERE SALES < (SELECT AVG(TARGET) FROM OFFICES);");
+    }
+
+    @Test
+    public void test249() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY FROM OFFICES WHERE SALES < 550000.00;");
+    }
+
+
+    @Test
+    public void test249_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT CITY FROM OFFICES WHERE TARGET >" +
+                        " (SELECT SUM(QUOTA) FROM SALESREPS WHERE REP_OFFICE=OFFICE);");
+    }
+
+
+    @Test
+    public void test250() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME FROM SALESREPS WHERE AGE>40 AND EMPL_NUM IN " +
+                        "(SELECT MANAGER FROM SALESREPS WHERE SALES>QUOTA);");
+    }
+
+
+    @Test
+    public void test250_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME FROM SALESREPS MGRS WHERE AGE>40 AND MGRS.EMPL_NUM IN " +
+                        "(SELECT MANAGER FROM SALESREPS EMPS WHERE EMPS.QUOTA>EMPS.SALES AND" +
+                        " EMPS.REP_OFFICE <> MGRS.REP_OFFICE);");
+    }
+
+
+    @Test
+    public void test251() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AVG(AMOUNT) FROM SALESREPS, ORDERS WHERE EMPL_NUM=REP AND MFR='ACI'" +
+                        " GROUP BY NAME HAVING AVG(AMOUNT) >(SELECT AVG(AMOUNT) FROM ORDERS);");
+    }
+
+
+    @Test
+    public void test251_2() {
+        DBTester.INSTANCE.testSelectFullAuto(
+                "SELECT NAME, AVG(AMOUNT) FROM SALESREPS, ORDERS WHERE EMPL_NUM=REP AND MFR='ACI' GROUP BY NAME, EMPL_NUM HAVING AVG(AMOUNT) >= (SELECT AVG(AMOUNT) FROM ORDERS WHERE REP=EMPL_NUM);");
+    }
 
 }
